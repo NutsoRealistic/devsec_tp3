@@ -22,3 +22,58 @@ jobs:
 
       - name: Run Bandit security scan
         run: bandit -r . --format json --exit-zero  # --exit-zero pour ne pas bloquer
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit security scan
+        run: bandit -r .
+
+  build:
+    needs: bandit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build the Docker image
+        run: docker build -t ghcr.io/nutsorealistic/devsec_tp3:${{ github.sha }} .
+
+      - name: Push the Docker image
+        run: docker push ghcr.io/nutsorealistic/devsec_tp3:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deployment on Coolify
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"ref": "refs/heads/main", "sha": "${{ github.sha }}"}' \
+            https://coolify.niceapp.cloud/api/v1/deploy?uuid=jgkwgw4sk0cks0kwcwog0c08&force=false
