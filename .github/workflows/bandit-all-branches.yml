@@ -1,0 +1,24 @@
+name: Bandit Security Scan (All Branches)
+
+on:
+  push:
+    branches:
+      - '**'  # Toutes les branches
+
+jobs:
+  bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit security scan
+        run: bandit -r . --format json --exit-zero  # --exit-zero pour ne pas bloquer
