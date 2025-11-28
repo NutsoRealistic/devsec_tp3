@@ -42,14 +42,3 @@ jobs:
 
       - name: Push the Docker image
         run: docker push ghcr.io/nutsorealistic/devsec_tp3:${{ github.sha }}
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger deployment on Coolify
-        run: |
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -d '{"ref": "refs/heads/main", "sha": "${{ github.sha }}"}' \
-            https://coolify-webhook-url.example.com/deploy
